@@ -9,7 +9,6 @@ namespace MiniGameSlots
     public class SlotsManagerEditor : Editor
     {
         SlotsManager manager;
-        SlotsManager.SlotOption result;
         bool[] machineFoldOuts = { false, false, false };
         bool resultFoldout = false;
 
@@ -22,9 +21,9 @@ namespace MiniGameSlots
         {
             base.OnInspectorGUI();
 
-            if (GUILayout.Button("Randomize")) result = manager.Randomize();
+            if (GUILayout.Button("Randomize")) manager.Result = manager.Randomize();
 
-            if(result != null && manager.slotOptions.Count > 0)
+            if(manager.Result != null && manager.slotOptions.Count > 0)
             {
 
                 for (int i = 0; i < 3; i++)
@@ -33,13 +32,8 @@ namespace MiniGameSlots
                     machineFoldOuts[i] = EditorGUILayout.Foldout(machineFoldOuts[i], "Machine " + (i + 1).ToString());
                     if(machineFoldOuts[i])
                     {
-                        EditorGUILayout.BeginHorizontal();
-
                         SlotsManager.SlotOption slot = manager.slotOptions[manager.Indices[i]];
                         GUILayout.Label("Tokens: " + slot.tokens);
-                        GUILayout.Label("Target Accuracy: " + slot.targetAccuracy);
-
-                        EditorGUILayout.EndHorizontal();
                     }
                 }
 
@@ -49,8 +43,9 @@ namespace MiniGameSlots
                 {
                     EditorGUILayout.BeginHorizontal();
 
-                    GUILayout.Label("Tokens: " + result.tokens);
-                    GUILayout.Label("Target Accuracy: " + result.targetAccuracy);
+                    GUILayout.Label("Tokens: " + manager.Result.tokens);
+                    GUILayout.Label("Target Accuracy: " + manager.GetTargetAccuracy(manager.Result.tokens));
+                    GUILayout.Label("Time to Beat: " + manager.GetTimeToBeat(manager.Result.tokens));
 
                     EditorGUILayout.EndHorizontal();
                 }
