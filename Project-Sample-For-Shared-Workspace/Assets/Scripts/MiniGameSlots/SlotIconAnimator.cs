@@ -16,6 +16,7 @@ namespace MiniGameSlots
 
         float timeElapsed = 0f;
         int spinNum = 0;
+        int targetSpins = 0;
         float acutalSpinTime = 0f;
         int currentIndex = 0;
         int targetIndex = 0;
@@ -29,7 +30,9 @@ namespace MiniGameSlots
             this.targetIndex = targetIndex;
             this.callback = callback;
             backGround.SetActive(false);
+            currentIndex = 0;
             spinNum = 0;
+            targetSpins = findSpinCount();
             spinning = true;
         }
 
@@ -56,7 +59,7 @@ namespace MiniGameSlots
                     image.sprite = slotsManager.slotOptions[currentIndex].icon;
 
                     //when we've hit the last spin stop spinning and call the callback
-                    if(spinNum == minSpins + targetIndex)
+                    if(spinNum == targetSpins)
                     {
                         spinning = false;
                         finishing = true;
@@ -70,6 +73,8 @@ namespace MiniGameSlots
                 timeElapsed += Time.deltaTime;
                 if (timeElapsed > acutalSpinTime)
                 {
+                    //set the icon
+                    image.sprite = slotsManager.slotOptions[currentIndex].icon;
                     timeElapsed = 0f;
                     spinning = false;
                     backGround.SetActive(true);
@@ -77,6 +82,13 @@ namespace MiniGameSlots
                     finishing = false;
                 }
             }
+        }
+
+        int findSpinCount()
+        {
+            int count = minSpins;
+            while (count % slotsManager.slotOptions.Count != targetIndex) count++;
+            return count;
         }
     }
 
