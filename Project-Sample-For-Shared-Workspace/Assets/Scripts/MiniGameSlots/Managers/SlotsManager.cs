@@ -45,8 +45,34 @@ namespace MiniGameSlots
         public SlotOption Randomize()
         {
             indices[0] = Random.Range(0, slotOptions.Count);
-            indices[1] = Random.Range(0, slotOptions.Count);
-            indices[2] = Random.Range(0, slotOptions.Count);
+            //randomize which case is triggered
+            switch (Random.Range(0, 4))
+            {
+                //all 3 slots are the same
+                case 0:
+                    indices[1] = indices[0];
+                    indices[2] = indices[0];
+                    break;
+
+                //the first two slots are the same, third is random
+                case 1:
+                    indices[1] = indices[0];
+                    indices[2] = Random.Range(0, slotOptions.Count);
+                    break;
+
+                //first and third are the same, second is random
+                case 2:
+                    indices[1] = Random.Range(0, slotOptions.Count);
+                    indices[2] = indices[0];
+                    break;
+
+                //all 3 are random
+                default:
+                    indices[1] = Random.Range(0, slotOptions.Count);
+                    indices[2] = Random.Range(0, slotOptions.Count);
+                    break;
+            }
+
 
             //Tokens
             int averageTokens = (slotOptions[indices[0]].tokens
