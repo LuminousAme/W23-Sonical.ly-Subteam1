@@ -2,9 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEditor;
 
 namespace MiniGameWheel
 {
+    [ExecuteAlways]
     public class WheelManager : MonoBehaviour
     {
         [System.Serializable]
@@ -44,6 +46,8 @@ namespace MiniGameWheel
         public TextValueAnimator accuracyText;
         public TextValueAnimator timeText;
 
+        bool needsToPopulate = false;
+
         private void OnEnable()
         {
             SwipeDetector.OnSwipe += RandomizeUI;
@@ -56,34 +60,52 @@ namespace MiniGameWheel
 
         void Start()
         {
-            Populate();
+            needsToPopulate = true;
         }
 
         private void OnValidate()
         {
-            Populate();
+            needsToPopulate = true;
+        }
+
+        void Update()
+        {
+            if(needsToPopulate)
+            {
+                Populate();
+                needsToPopulate = false;
+            }
         }
 
         //based on this video: https://youtu.be/uONqTBSTkJ8 
         public void Populate()
         {
-            //if the parent of the wheel options, or the wheel options prefab is null, or there are no options in the list just return
-            if (!wheelHolderReference || !wheelOptionsPrefab || possibleResults.Count == 0) return;
+            //if the parent of the wheel options, or the wheel options prefab is null in the list just return
+            if (!wheelHolderReference || !wheelOptionsPrefab) return;
 
             //destroy any current children the holder may have
             while (wheelHolderReference.childCount > 0) DestroyImmediate(wheelHolderReference.GetChild(0).gameObject);
 
+            //if there are no options in the list just return
+            if (possibleResults.Count == 0) return;
+
             //otherwise begin populating the wheel
             for (int i = 0; i < possibleResults.Count; i++)
             {
-                GameObject newOption = Instantiate(wheelOptionsPrefab, wheelHolderReference);
+                GameObject newOption;
+#if UNITY_EDITOR
+                newOption = Instantiate(wheelOptionsPrefab);
+                GameObjectUtility.SetParentAndAlign(newOption, wheelHolderReference.gameObject);
+#else
+                newOption = Instantiate(wheelOptionsPrefab, wheelHolderReference);
+#endif
                 //puts it in the correct place around the wheel
-                newOption.transform.rotation = Quaternion.Euler(new Vector3(0, 0, i * 360.0f / possibleResults.Count));
+                newOption.transform.localRotation = Quaternion.Euler(new Vector3(0, 0, i * -360.0f / possibleResults.Count));
                 //fills the correct portion of the wheel
                 newOption.GetComponent<Image>().fillAmount = fillAmount / possibleResults.Count;
             }
             //rotates the wheel so the first option is at the top
-            wheelHolderReference.rotation = Quaternion.Euler(0, 0, 360f * (fillAmount / possibleResults.Count / 2));
+            wheelHolderReference.rotation = Quaternion.Euler(new Vector3(0, 0, 360f * (fillAmount / possibleResults.Count / 2)));
         }
 
         public void RandomizeUI(float distance)
@@ -94,8 +116,8 @@ namespace MiniGameWheel
             timeText.valueNull = true;
 
             //handle updating the UI
-            int numberOfSpins = (int)System.Math.Round(distance);
-            int index = numberOfSpins % possibleResults.Count;
+            int numberOfSpins = (int)System.Math.Round(distance / 10.0f);
+            index = numberOfSpins % possibleResults.Count;
             result = new SpinWheelResult(possibleResults[index].tokens);
 
             WheelSpinAnimator.Spin(numberOfSpins, UpdateText);
@@ -150,10 +172,10 @@ namespace MiniGameWheel
             if (fromIndex < 0) fromIndex = possibleResults.Count - 1;
             if (toIndex > possibleResults.Count - 1) toIndex = 0;
 
-            Quaternion desiredRot = Quaternion.Euler(new Vector3(0.0f, 0.0f, toIndex * (360f / possibleResults.Count) +
+            Quaternion desiredRot = Quaternion.Euler(new Vector3(0.0f, 0.0f, toIndex * (-360f / possibleResults.Count) +
                 (360f * (fillAmount / possibleResults.Count / 2))));
 
-            Quaternion baseRot = Quaternion.Euler(new Vector3(0.0f, 0.0f, fromIndex * (360f / possibleResults.Count) +
+            Quaternion baseRot = Quaternion.Euler(new Vector3(0.0f, 0.0f, fromIndex * (-360f / possibleResults.Count) +
                 (360f * (fillAmount / possibleResults.Count / 2))));
 
             wheelHolderReference.rotation = Quaternion.Slerp(baseRot, desiredRot, t);
