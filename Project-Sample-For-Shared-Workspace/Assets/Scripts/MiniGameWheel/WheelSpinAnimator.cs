@@ -33,7 +33,7 @@ namespace MiniGameWheel
 
         void Update()
         {
-            if(targetSpins > 0) spinT = (float)spinNum / ((float)targetSpins);
+            if(targetSpins > 0) spinT = (float)spinNum / ((float)targetSpins + 1.0f);
             if (spinT < 0) spinT = 0.0f;
 
             else if (spinT > 1.0f) spinT = 1.0f;

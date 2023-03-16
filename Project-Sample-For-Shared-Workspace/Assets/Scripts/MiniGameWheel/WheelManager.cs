@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
+using TMPro;
 
 namespace MiniGameWheel
 {
@@ -24,8 +25,12 @@ namespace MiniGameWheel
         [Range(0.0f, 1.0f)]
         public float fillAmount = 0.95f;
 
+        [Tooltip("How far away from the centre the text should be")]
+        public float textDistance = 250.0f;
+
         public GameObject wheelOptionsPrefab;
         public Transform wheelHolderReference;
+        public GameObject instructionText;
 
         //the values for all of the possible wheel permutations
         public List<SpinWheelResult> possibleResults = new List<SpinWheelResult>();
@@ -47,6 +52,7 @@ namespace MiniGameWheel
         public TextValueAnimator timeText;
 
         bool needsToPopulate = false;
+        bool waitAFrame = true;
 
         private void OnEnable()
         {
@@ -68,13 +74,16 @@ namespace MiniGameWheel
             needsToPopulate = true;
         }
 
+        
+
         void Update()
         {
-            if(needsToPopulate)
+            if (!waitAFrame && needsToPopulate)
             {
                 Populate();
                 needsToPopulate = false;
             }
+            else if (waitAFrame) waitAFrame = false;
         }
 
         //based on this video: https://youtu.be/uONqTBSTkJ8 
@@ -103,6 +112,22 @@ namespace MiniGameWheel
                 newOption.transform.localRotation = Quaternion.Euler(new Vector3(0, 0, i * -360.0f / possibleResults.Count));
                 //fills the correct portion of the wheel
                 newOption.GetComponent<Image>().fillAmount = fillAmount / possibleResults.Count;
+
+                //change the text to the correct tokens amount
+                TMP_Text text = newOption.GetComponentInChildren<TMP_Text>();
+                text.text = possibleResults[i].tokens.ToString();
+
+                Vector3 up = newOption.transform.up;
+                newOption.transform.localRotation = Quaternion.Euler(new Vector3(0, 0, (i+1) * -360.0f / possibleResults.Count));
+                Vector3 nextUp = newOption.transform.up;
+                newOption.transform.localRotation = Quaternion.Euler(new Vector3(0, 0, i * -360.0f / possibleResults.Count));
+
+                Vector3 direction = ((nextUp + up) * 0.5f).normalized;
+                direction = new Vector3(direction.x * text.transform.lossyScale.x, direction.y * text.transform.lossyScale.y, direction.z * text.transform.lossyScale.z);
+
+                text.transform.position = wheelHolderReference.position + (direction * textDistance);
+                float textangle = -(360f * (fillAmount / possibleResults.Count / 2));
+                text.transform.localRotation = Quaternion.Euler(new Vector3(0, 0, textangle));
             }
             //rotates the wheel so the first option is at the top
             wheelHolderReference.rotation = Quaternion.Euler(new Vector3(0, 0, 360f * (fillAmount / possibleResults.Count / 2)));
@@ -110,6 +135,7 @@ namespace MiniGameWheel
 
         public void RandomizeUI(float distance)
         {
+            instructionText.SetActive(false);
             textBackground.SetActive(false);
             jackpotText.valueNull = true;
             accuracyText.valueNull = true;
@@ -172,10 +198,10 @@ namespace MiniGameWheel
             if (fromIndex < 0) fromIndex = possibleResults.Count - 1;
             if (toIndex > possibleResults.Count - 1) toIndex = 0;
 
-            Quaternion desiredRot = Quaternion.Euler(new Vector3(0.0f, 0.0f, toIndex * (-360f / possibleResults.Count) +
+            Quaternion baseRot = Quaternion.Euler(new Vector3(0.0f, 0.0f, -1.0f * (fromIndex * -360f / possibleResults.Count) +
                 (360f * (fillAmount / possibleResults.Count / 2))));
 
-            Quaternion baseRot = Quaternion.Euler(new Vector3(0.0f, 0.0f, fromIndex * (-360f / possibleResults.Count) +
+            Quaternion desiredRot = Quaternion.Euler(new Vector3(0.0f, 0.0f, -1.0f * (toIndex * -360f / possibleResults.Count) +
                 (360f * (fillAmount / possibleResults.Count / 2))));
 
             wheelHolderReference.rotation = Quaternion.Slerp(baseRot, desiredRot, t);
